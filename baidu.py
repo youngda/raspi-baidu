@@ -40,7 +40,6 @@ def dump_res(buf):
     a = eval(buf)
     print (type(a))
     if a['err_msg']=='success.':
-        #print a['result'][0]#终于搞定了，在这里可以输出，返回的语句
         duihua = a['result'][0]
         print (duihua)
  
