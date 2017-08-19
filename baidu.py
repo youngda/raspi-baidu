@@ -82,8 +82,17 @@ api = 'http://www.tuling123.com/openapi/api?key=5a9dcb0034294e67a010a2be3837053e
 while(True):
     os.system('arecord -D "plughw:1,0" -f S16_LE -d 5 -r 8000 /home/pi/baidu/2.wav')
     use_cloud(token)
-    print (duihua)
     info = duihua
+    print("/////////")
+    print(info)
+    print("/////////")
+
+    while(info == '1' or info == ''):
+        os.system('arecord -D "plughw:1,0" -f S16_LE -d 5 -r 8000 /home/pi/baidu/2.wav')
+        use_cloud(token)
+        info = duihua
+        duihua = ""
+        time.sleep(3)
     duihua = ""
     request = api   + info
     response = getHtml(request)
