@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#auth:youngda
 from pyaudio import PyAudio, paInt16
 import importlib
 import numpy as np
@@ -10,6 +11,7 @@ import base64
 import json
 import os
 import sys
+import RPi.GPIO as GPIO
 #importlib.reload(sys) 
 save_count = 0
 save_buffer = []
@@ -19,7 +21,8 @@ time_flag = 0
 flag_num = 0
 filename = '2.wav'
 duihua = '1'
- 
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(40, GPIO.OUT,initial=GPIO.HIGH)
 def getHtml(url):
     page = requests.get(url)
     html = page.text
@@ -35,13 +38,9 @@ def get_token():
  
 def dump_res(buf):
     global duihua
-    print ("字符串类型")
-    print (buf)
     a = eval(buf)
-    print (type(a))
     if a['err_msg']=='success.':
         duihua = a['result'][0]
-        print (duihua)
  
 def use_cloud(token):
     fp = wave.open(filename, 'rb')
@@ -78,34 +77,39 @@ def save_wave_file(filename, data):
  
 token = get_token()
 api = 'http://www.tuling123.com/openapi/api?key=5a9dcb0034294e67a010a2be3837053e&info='
- 
-while(True):
-    os.system('arecord -D "plughw:1,0" -f S16_LE -d 5 -r 8000 /home/pi/baidu/2.wav')
-    use_cloud(token)
-    info = duihua
-    print("/////////")
-    print(info)
-    print("/////////")
-
-    while(info == '1' or info == ''):
-        os.system('arecord -D "plughw:1,0" -f S16_LE -d 5 -r 8000 /home/pi/baidu/2.wav')
+try:
+    GPIO.output(40, GPIO.HIGH)
+    while (True):
+        os.system('arecord --format=S16_LE --duration=4 --rate=8k /home/pi/baidu/2.wav')
         use_cloud(token)
         info = duihua
-        duihua = ""
-        time.sleep(3)
-    duihua = ""
-    request = api   + info
-    response = getHtml(request)
-    dic_json = json.loads(response)
- 
-    a = dic_json['text']
-    print (type(a))
-    unicodestring = a
- 
-    # 将Unicode转化为普通Python字符串："encode"
-    utf8string = unicodestring.encode("utf-8")
- 
-    print (type(utf8string))
-    print (str(a))
-    url = "http://tsn.baidu.com/text2audio?tex="+dic_json['text']+"&lan=zh&per=0&pit=1&spd=7&cuid=10026562&ctp=1&tok="+token
-    os.system('mpg123 "%s"'%(url))
+        print("/////////")
+        print(info)
+        print("/////////")
+        while (info == '1' or info == '' or info == '，' or info[1] == '，'):
+            os.system('arecord --format=S16_LE --duration=4 --rate=8k /home/pi/baidu/2.wav')
+            use_cloud(token)
+            info = duihua
+            duihua = ""
+        if (info.find("开灯") >= 0):
+            url = "http://tsn.baidu.com/text2audio?tex=正在为主人开灯&lan=zh&per=4&pit=1&spd=7&cuid=10026562&ctp=1&tok=" + token
+            os.system('mpg123 "%s"' % (url))
+            GPIO.output(40, GPIO.LOW)
+            duihua = ""
+        elif (info.find("关灯") >= 0 or info.find("观灯") >= 0):
+            url = "http://tsn.baidu.com/text2audio?tex=正在为尊贵的主人关灯&lan=zh&per=4&pit=1&spd=7&cuid=10026562&ctp=1&tok=" + token
+            os.system('mpg123 "%s"' % (url))
+            GPIO.output(40, GPIO.HIGH)
+            duihua = ""
+        else:
+            duihua = ""
+            request = api + info
+            response = getHtml(request)
+            dic_json = json.loads(response)
+            atext = dic_json['text']
+            url = "http://tsn.baidu.com/text2audio?tex=" + atext + "&lan=zh&per=4&pit=1&spd=6&cuid=10026562&ctp=1&tok=" + token
+            os.system('mpg123 "%s"' % (url))
+            atext = ""
+except:
+    print('Cleaning up')
+    GPIO.cleanup()
