@@ -82,7 +82,7 @@ try:
         os.system('arecord --format=S16_LE --duration=4 --rate=8k /home/pi/baidu/2.wav')
         use_cloud(token)
         info = duihua
-        print info
+        print (info)
         while (info == '1' or info == '' or info == '，' or info[1] == '，'):
             os.system('arecord --format=S16_LE --duration=4 --rate=8k /home/pi/baidu/2.wav')
             use_cloud(token)
@@ -95,5 +95,5 @@ try:
             GPIO.output(40, GPIO.HIGH)
             duihua = ""
 except:
-    print 'Cleaning up'
+    print ('Cleaning up')
     GPIO.cleanup()
